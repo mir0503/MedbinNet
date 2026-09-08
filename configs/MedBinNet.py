@@ -62,4 +62,47 @@ val_evaluator = dict(ann_file=data_root + 'valid/_annotations.coco.json')
 test_evaluator = val_evaluator
 
 # We can use the pre-trained Mask RCNN model to obtain higher performance
-# load_from = 'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/rtmdet-ins_tiny_8xb32-300e_coco/rtmdet-ins_tiny_8xb32-300e_coco_20221130_151727-ec670f7e.pth'
+# load_from = 'https://download.openmmlab.com/mmdetection/v3.0/rtmdet/rtmdet-ins_tiny_8xb32-300e_coco/rtmdet-ins_tiny_8xb32-300e_coco_20221130_151727-ec670f7e.pth'            custom_imports = dict(imports=['copy_paste_transform'], allow_failed_imports=False)
+
+train_pipeline = [
+    dict(type='LoadImageFromFile', backend_args=None),
+    dict(
+        type='LoadAnnotations',
+        with_bbox=True,
+        with_mask=True,
+        poly2mask=True),   # <-- changed from False, so gt_masks is BitmapMasks
+    dict(
+        type='CachedMosaic',
+        img_scale=(640, 640),
+        pad_val=114.0,
+        max_cached_images=20,
+        random_pop=False),
+    dict(
+        type='RandomResize',
+        scale=(1280, 1280),
+        ratio_range=(0.5, 2.0),
+        keep_ratio=True),
+    dict(type='RandomCrop', crop_size=(640, 640)),
+    dict(type='YOLOXHSVRandomAug'),
+    dict(type='RandomFlip', prob=0.5),
+    dict(type='Pad', size=(640, 640), pad_val=dict(img=(114, 114, 114))),
+    dict(
+        type='CachedMixUp',
+        img_scale=(640, 640),
+        ratio_range=(1.0, 1.0),
+        max_cached_images=10,
+        random_pop=False,
+        pad_val=(114, 114, 114),
+        prob=0.5),
+    dict(
+        type='TargetedCopyPaste',            # <-- inserted here, after the canvas is
+        pool_dir='./copypaste_pool',          #     fixed at 640x640, so placement math
+        max_paste=2,                          #     in the transform is simple/reliable
+        paste_prob=0.5,
+        scale_range=(0.6, 1.3),
+        blend_blur=3,
+        class_name_to_id={'transferpettor_glass': 32, 'transferpettor_plastic': 33}),
+    dict(type='FilterAnnotations', min_gt_bbox_wh=(1, 1)),
+    dict(type='PackDetInputs')
+]
+train_dataloader = dict(dataset=dict(pipeline=train_pipeline))
