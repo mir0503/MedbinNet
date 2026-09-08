@@ -40,11 +40,18 @@ def ann_to_binary_mask(ann, height, width):
  
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ann", required=True, help="COCO-format annotation json")
-    parser.add_argument("--img-dir", required=True, help="folder containing the images")
-    parser.add_argument("--classes", nargs="+", required=True,
-                         help="class names to extract, e.g. transferpottor_glass transferpottor_plastic")
-    parser.add_argument("--out-dir", required=True)
+    parser.add_argument(
+        "--ann", default="./MMdetection/data/MedBin_Dataset/train/_annotations.coco.json",
+        help="COCO-format annotation json")
+    parser.add_argument(
+        "--img-dir", default="./MMdetection/data/MedBin_Dataset/train",
+        help="folder containing the images")
+    parser.add_argument(
+        "--classes", nargs="+",
+        default=["transferpettor_glass", "transferpettor_plastic"],
+        help="class names to extract, e.g. transferpettor_glass transferpettor_plastic")
+    parser.add_argument(
+        "--out-dir", default="./copypaste_pool")
     parser.add_argument("--min-area", type=int, default=200,
                          help="skip instances smaller than this many pixels — avoids near-empty crops")
     args = parser.parse_args()
